@@ -1,5 +1,6 @@
-<!-- Using a web link -->
-([https://example.com](https://github.com/sunnyhudda786/SFTM/blob/main/sftm_logo.png))
+<p align="center">
+  <img src="https://github.com/sunnyhudda786/SFTM/blob/main/sftm_logo.png" />
+</p>
 
 
 # Secure File Transfer Monitoring System
