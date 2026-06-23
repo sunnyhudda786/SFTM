@@ -1,3 +1,7 @@
+<!-- Using a web link -->
+![Company Logo](https://example.com)
+
+
 # Secure File Transfer Monitoring System
 
 Clean Django + SQLite project for file-transfer monitoring, alert ownership, OTP password reset, and escalation email alerts.
