@@ -1,0 +1,145 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Alert Details | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Alert Investigation{% endblock %}
+{% block content %}
+
+<section class="incident-hero severity-border-{{ alert.event.severity|lower }}">
+    <div class="incident-hero-main">
+        <span class="tiny-label">Alert #{{ alert.id }} · {{ alert.event.severity }} · Risk {{ alert.event.risk_score }}/100</span>
+        <h2>{{ path_details.file_name }}</h2>
+        <p>{{ incident_summary }}</p>
+    </div>
+    <div class="incident-status-card">
+        <span class="badge status-{{ alert.status }}">{{ alert.get_status_display }}</span>
+        <strong>{{ alert.owner_name }}</strong>
+        <small>Current owner</small>
+    </div>
+</section>
+
+<section class="incident-kpi-grid">
+    <div class="incident-kpi"><span>Severity</span><strong>{{ alert.event.severity }}</strong><small>{{ risk_label }}</small></div>
+    <div class="incident-kpi"><span>Status</span><strong>{{ alert.get_status_display }}</strong><small>{% if alert.escalated %}Escalated{% else %}Not escalated{% endif %}</small></div>
+    <div class="incident-kpi"><span>Detected action</span><strong>{{ path_details.movement_label }}</strong><small>{{ alert.created_at|date:'Y-m-d H:i' }}</small></div>
+    <div class="incident-kpi"><span>Policy</span><strong>{{ alert.event.policy.name|default:'No policy'|truncatechars:38 }}</strong><small>Monitoring rule set</small></div>
+</section>
+
+<section class="two-col incident-main-grid">
+    <div class="panel incident-explain-card">
+        <div class="panel-title"><h2>What happened</h2><span class="badge severity-{{ alert.event.severity|lower }}">{{ alert.event.severity }}</span></div>
+        <p class="incident-big-text">{{ incident_summary }}</p>
+        <div class="incident-location-box">
+            <span>{{ path_details.detected_location_label }}</span>
+            <strong class="path">{{ path_details.detected_location }}</strong>
+        </div>
+        {% if path_details.show_source %}
+        <div class="incident-location-box muted-box">
+            <span>Original source</span>
+            <strong class="path">{{ path_details.source_display }}</strong>
+        </div>
+        {% endif %}
+        <p class="tiny-note">{{ path_details.explanation }}</p>
+    </div>
+
+    <div class="panel incident-action-card">
+        <div class="panel-title"><h2>Action needed</h2><span class="badge">Next steps</span></div>
+        <p class="incident-action-text">{{ primary_action }}</p>
+        <ol class="clean-steps">
+            {% for step in recommended_steps %}<li>{{ step }}</li>{% endfor %}
+        </ol>
+        <div class="quick-action-row">
+            {% if can_claim %}
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="claim"><button class="button primary" type="submit">Claim Alert</button></form>
+            {% endif %}
+            {% if can_update %}
+                <form method="post">{% csrf_token %}<input type="hidden" name="action" value="release"><button class="button ghost" type="submit">Release</button></form>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="two-col incident-main-grid">
+    <div class="panel">
+        <div class="panel-title"><h2>Why it was flagged</h2><span class="badge">Policy match</span></div>
+        <p class="muted-text">{{ simple_reason }}</p>
+        <div class="friendly-chip-list">
+            {% for item in category_items %}<span class="friendly-chip">{{ item }}</span>{% endfor %}
+        </div>
+        <div class="destination-result {% if alert.event.is_authorized %}ok-result{% else %}bad-result{% endif %}">
+            <span>Destination check</span>
+            <strong>{{ destination_assessment }}</strong>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title"><h2>File evidence</h2><a class="button ghost small" href="{% url 'event_detail' alert.event.pk %}">Full Event</a></div>
+        <dl class="clean-detail-list">
+            <dt>File name</dt><dd>{{ path_details.file_name }}</dd>
+            <dt>Detected location</dt><dd class="path">{{ path_details.detected_location }}</dd>
+            {% if path_details.show_destination %}<dt>Destination</dt><dd class="path">{{ path_details.destination_display }}</dd>{% endif %}
+            {% if path_details.show_source %}<dt>Source</dt><dd class="path">{{ path_details.source_display }}</dd>{% endif %}
+            <dt>System user</dt><dd>{{ alert.event.username|default:'Unknown' }}</dd>
+            <dt>Process</dt><dd>{{ alert.event.process_name|default:'Unknown' }}</dd>
+        </dl>
+    </div>
+</section>
+
+<section class="two-col incident-main-grid">
+    <div class="panel">
+        <div class="panel-title"><h2>Assign or reassign</h2><span class="badge">Ownership</span></div>
+        {% if can_assign %}
+        <form method="post" class="form-card compact-form">
+            {% csrf_token %}<input type="hidden" name="action" value="assign">
+            {% for field in assign_form %}
+                <div class="form-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+            {% endfor %}
+            <button class="button primary" type="submit">Save Assignment</button>
+        </form>
+        {% else %}
+            <p class="muted-text">Only the policy admin can assign or reassign this alert.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <div class="panel-title"><h2>Investigation notes</h2><span class="badge">Close / update</span></div>
+        <form method="post" class="form-card">
+            {% csrf_token %}<input type="hidden" name="action" value="update">
+            {% for field in form %}
+                <div class="form-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+            {% endfor %}
+            {% if can_update %}<button class="button primary" type="submit">Save Investigation</button>{% else %}<p class="muted-text">You can view this alert, but only the alert owner or policy admin can update it.</p>{% endif %}
+        </form>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-title"><h2>Advanced evidence</h2><span class="badge">For audit / troubleshooting</span></div>
+    <details class="advanced-details">
+        <summary>Show technical evidence</summary>
+        <dl class="clean-detail-list two-column-details">
+            <dt>Raw alert reason</dt><dd>{{ alert.event.reason|default:'N/A' }}</dd>
+            <dt>Classification reason</dt><dd>{{ alert.event.classification_reason|default:'N/A' }}</dd>
+            <dt>Hash after event</dt><dd class="hash">{{ alert.event.hash_after|default:'Not available' }}</dd>
+            <dt>Hash before event</dt><dd class="hash">{{ alert.event.hash_before|default:'Not available' }}</dd>
+            <dt>Integrity status</dt><dd>{{ alert.event.integrity_status|default:'N/A' }}</dd>
+            <dt>Escalation status</dt><dd>{% if alert.escalated %}Escalated to {{ alert.escalation_recipients|default:'configured recipients' }}{% else %}Not escalated{% endif %}</dd>
+            <dt>Escalation reason</dt><dd>{{ alert.escalation_reason|default:'N/A' }}</dd>
+        </dl>
+    </details>
+</section>
+
+<section class="panel">
+    <div class="panel-title"><h2>Email notifications</h2><a href="{% url 'email_alerts' %}">Open email log</a></div>
+    <div class="email-mini-list">
+        {% for email in emails %}
+            <div class="email-mini-card">
+                <div>
+                    <strong>{{ email.get_purpose_display }}</strong>
+                    <p>{{ email.subject }} · To {{ email.recipient }} · {{ email.delivery_status }} · {{ email.created_at|date:'Y-m-d H:i' }}</p>
+                    {% if email.error_message %}<p class="error-box">{{ email.error_message }}</p>{% endif %}
+                </div>
+                <details><summary>Body</summary><pre>{{ email.body }}</pre></details>
+            </div>
+        {% empty %}<p class="muted-text">No email notification was recorded for this alert yet.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

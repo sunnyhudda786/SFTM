@@ -1,0 +1,56 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Integrity Baselines | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Integrity Baselines and History{% endblock %}
+{% block content %}
+<section class="panel">
+    <div class="panel-title"><h2>Stored File Hash Baselines</h2><span class="badge">{{ baselines|length }} baselines</span></div>
+    <p class="muted-text">Run <code>python manage.py scan_integrity</code> to create or refresh baselines. Future changes are compared against these hashes.</p>
+    <div class="table-wrap compact-table">
+        <table>
+            <thead><tr><th>Path</th><th>Hash</th><th>Algorithm</th><th>Size</th><th>Last Seen</th></tr></thead>
+            <tbody>
+            {% for item in baselines %}
+                <tr>
+                    <td class="path">{{ item.path }}</td>
+                    <td class="hash">{{ item.hash_value }}</td>
+                    <td>{{ item.algorithm }}</td>
+                    <td>{{ item.file_size }}</td>
+                    <td>{{ item.last_seen|date:'Y-m-d H:i:s' }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">No baselines yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+<section class="panel">
+    <div class="panel-title"><h2>Integrity Check History</h2><span class="badge">Audit trail</span></div>
+    <form class="filter-bar" method="get">
+        <select name="status">
+            <option value="">All statuses</option>
+            {% for value,label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <button class="button primary" type="submit">Filter</button>
+        <a class="button ghost" href="{% url 'integrity' %}">Reset</a>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Checked</th><th>Status</th><th>Path</th><th>Baseline Hash</th><th>Current Hash</th><th>Reason</th></tr></thead>
+            <tbody>
+            {% for item in history_page %}
+                <tr>
+                    <td>{{ item.checked_at|date:'Y-m-d H:i:s' }}</td>
+                    <td><span class="badge">{{ item.status }}</span></td>
+                    <td class="path">{{ item.path }}</td>
+                    <td class="hash">{{ item.baseline_hash }}</td>
+                    <td class="hash">{{ item.current_hash }}</td>
+                    <td>{{ item.reason }}</td>
+                </tr>
+            {% empty %}<tr><td colspan="6">No integrity history yet.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'monitor/pagination.html' with page_obj=history_page %}
+</section>
+{% endblock %}

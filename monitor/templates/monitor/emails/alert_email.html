@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f3f6fb;padding:28px 0;">
+    <tr><td align="center">
+      <table width="640" cellpadding="0" cellspacing="0" role="presentation" style="width:640px;max-width:94%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 14px 36px rgba(15,23,42,.10);">
+        <tr>
+          <td style="background:#0f172a;padding:22px 26px;">
+            {% if logo_url %}<img src="{{ logo_url }}" alt="SFTM logo" width="58" style="display:block;border-radius:12px;margin-bottom:12px;">{% endif %}
+            <div style="color:#93c5fd;font-size:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;">{{ title }}</div>
+            <h1 style="margin:8px 0 0 0;color:#ffffff;font-size:22px;line-height:1.3;">{{ event.severity }} alert: {{ file_name }}</h1>
+            <p style="margin:8px 0 0 0;color:#cbd5e1;font-size:13px;line-height:1.5;">Alert #{{ alert.id }} · {{ policy_name }} · {{ created_at }}</p>
+          </td>
+        </tr>
+
+        {% if escalation_reason %}
+        <tr>
+          <td style="padding:20px 26px 0 26px;">
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #f97316;border-radius:14px;padding:15px;">
+              <div style="font-size:12px;color:#9a3412;font-weight:900;text-transform:uppercase;letter-spacing:.06em;">Why you are receiving this</div>
+              <p style="margin:7px 0 0 0;color:#7c2d12;font-size:14px;line-height:1.55;font-weight:700;">{{ escalation_reason }}</p>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+
+        <tr>
+          <td style="padding:20px 26px 0 26px;">
+            <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:18px;">
+              <div style="font-size:12px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.06em;">What happened</div>
+              <p style="margin:8px 0 0 0;color:#111827;font-size:16px;line-height:1.55;font-weight:700;">{{ incident_summary }}</p>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 26px 0 26px;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+              <tr>
+                <td style="padding:0 8px 10px 0;" width="50%">
+                  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;">
+                    <div style="font-size:11px;color:#64748b;font-weight:900;text-transform:uppercase;">Severity</div>
+                    <div style="font-size:22px;font-weight:900;color:#111827;margin-top:4px;">{{ event.severity }}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;">Risk {{ event.risk_score }}/100 · {{ risk_band }}</div>
+                  </div>
+                </td>
+                <td style="padding:0 0 10px 8px;" width="50%">
+                  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;">
+                    <div style="font-size:11px;color:#64748b;font-weight:900;text-transform:uppercase;">Owner / status</div>
+                    <div style="font-size:22px;font-weight:900;color:#111827;margin-top:4px;">{{ owner }}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ alert.get_status_display }}</div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 26px 0 26px;">
+            <h2 style="margin:0 0 10px 0;font-size:17px;color:#111827;">Key evidence</h2>
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+              <tr><td style="width:150px;background:#f8fafc;border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;font-weight:800;color:#475569;">File</td><td style="border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;color:#111827;word-break:break-word;">{{ file_name }}</td></tr>
+              <tr><td style="background:#f8fafc;border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;font-weight:800;color:#475569;">{{ path_details.detected_location_label }}</td><td style="border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;color:#111827;word-break:break-all;">{{ path_details.detected_location }}</td></tr>
+              {% if path_details.show_source %}<tr><td style="background:#f8fafc;border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;font-weight:800;color:#475569;">Source</td><td style="border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;color:#111827;word-break:break-all;">{{ path_details.source_display }}</td></tr>{% endif %}
+              <tr><td style="background:#f8fafc;border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;font-weight:800;color:#475569;">Reason</td><td style="border-bottom:1px solid #e5e7eb;padding:10px;font-size:13px;color:#111827;">{{ simple_reason }}</td></tr>
+              <tr><td style="background:#f8fafc;padding:10px;font-size:13px;font-weight:800;color:#475569;">Destination check</td><td style="padding:10px;font-size:13px;color:#111827;">{{ destination_assessment }}</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 26px 0 26px;">
+            <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:17px;">
+              <div style="font-size:12px;color:#047857;font-weight:900;text-transform:uppercase;letter-spacing:.06em;">Required action</div>
+              <p style="margin:8px 0 0 0;color:#064e3b;font-size:14px;line-height:1.6;font-weight:700;">{{ recommended_action }}</p>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 26px 0 26px;">
+            <h2 style="margin:0 0 10px 0;font-size:17px;color:#111827;">Matched policy rule(s)</h2>
+            <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.7;">{% for item in category_items %}• {{ item }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 26px 32px 26px;">
+            {% if alert_url %}<a href="{{ alert_url }}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:800;">Open alert in dashboard</a>{% else %}<p style="margin:0;color:#64748b;font-size:13px;">Open the SFTM dashboard, claim or assign this alert, investigate the file movement, and document the result.</p>{% endif %}
+          </td>
+        </tr>
+
+        <tr><td style="background:#f8fafc;padding:16px 26px;text-align:center;color:#64748b;font-size:12px;">Automated notification from Secure File Transfer Monitor</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

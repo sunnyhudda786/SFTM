@@ -1,0 +1,63 @@
+{% extends 'monitor/base.html' %}
+{% block title %}{{ mode }} Policy | Secure Transfer Monitor{% endblock %}
+{% block page_title %}{{ mode }} Monitoring Policy{% endblock %}
+{% block content %}
+<form method="post" class="policy-form-shell">
+    {% csrf_token %}
+    <section class="panel">
+        <div class="panel-title"><h2>Policy Identity</h2><span class="badge">Scoped RBAC</span></div>
+        <div class="two-field-grid">
+            <div class="form-row"><label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>{{ form.name }}{% for error in form.name.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+            <div class="form-row checkbox-row"><label>{{ form.is_active }} {{ form.is_active.label }}</label>{% for error in form.is_active.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+        </div>
+        <div class="form-row"><label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>{{ form.description }}</div>
+    </section>
+
+    <section class="two-col policy-layout">
+        <div class="panel"><div class="panel-title"><h2>1. File Transfer Logging Scope</h2></div>
+            <div class="form-row"><label for="{{ form.monitored_directories.id_for_label }}">{{ form.monitored_directories.label }}</label>{{ form.monitored_directories }}<small>{{ form.monitored_directories.help_text }}</small>{% for error in form.monitored_directories.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+        </div>
+        <div class="panel"><div class="panel-title"><h2>2. Sensitive Data Scope</h2></div>
+            <div class="form-row"><label for="{{ form.sensitive_directories.id_for_label }}">{{ form.sensitive_directories.label }}</label>{{ form.sensitive_directories }}<small>{{ form.sensitive_directories.help_text }}</small></div>
+            <div class="form-row"><label for="{{ form.restricted_files.id_for_label }}">{{ form.restricted_files.label }}</label>{{ form.restricted_files }}<small>{{ form.restricted_files.help_text }}</small></div>
+        </div>
+    </section>
+
+    <section class="two-col policy-layout">
+        <div class="panel"><div class="panel-title"><h2>3. Classification Rules</h2></div>
+            <div class="form-row"><label for="{{ form.sensitive_filename_keywords.id_for_label }}">{{ form.sensitive_filename_keywords.label }}</label>{{ form.sensitive_filename_keywords }}<small>{{ form.sensitive_filename_keywords.help_text }}</small></div>
+            <div class="form-row"><label for="{{ form.sensitive_extensions.id_for_label }}">{{ form.sensitive_extensions.label }}</label>{{ form.sensitive_extensions }}<small>{{ form.sensitive_extensions.help_text }}</small></div>
+        </div>
+        <div class="panel"><div class="panel-title"><h2>4. Authorization Rules</h2></div>
+            <div class="form-row"><label for="{{ form.allowed_destinations.id_for_label }}">{{ form.allowed_destinations.label }}</label>{{ form.allowed_destinations }}<small>{{ form.allowed_destinations.help_text }}</small></div>
+            <div class="form-row"><label for="{{ form.blocked_destination_keywords.id_for_label }}">{{ form.blocked_destination_keywords.label }}</label>{{ form.blocked_destination_keywords }}<small>{{ form.blocked_destination_keywords.help_text }}</small></div>
+        </div>
+    </section>
+
+    <section class="two-col policy-layout">
+        <div class="panel"><div class="panel-title"><h2>5. Integrity & Bulk Detection</h2></div>
+            <div class="two-field-grid"><div class="form-row"><label for="{{ form.hash_algorithm.id_for_label }}">{{ form.hash_algorithm.label }}</label>{{ form.hash_algorithm }}</div><div class="form-row"><label for="{{ form.trusted_process_keywords.id_for_label }}">{{ form.trusted_process_keywords.label }}</label>{{ form.trusted_process_keywords }}</div></div>
+            <div class="two-field-grid"><div class="form-row"><label for="{{ form.burst_threshold_file_count.id_for_label }}">{{ form.burst_threshold_file_count.label }}</label>{{ form.burst_threshold_file_count }}<small>{{ form.burst_threshold_file_count.help_text }}</small></div><div class="form-row"><label for="{{ form.burst_threshold_seconds.id_for_label }}">{{ form.burst_threshold_seconds.label }}</label>{{ form.burst_threshold_seconds }}<small>{{ form.burst_threshold_seconds.help_text }}</small></div></div>
+        </div>
+        <div class="panel"><div class="panel-title"><h2>6. Email Notification & Escalation</h2></div>
+            <div class="two-field-grid"><div class="form-row"><label for="{{ form.email_alert_min_severity.id_for_label }}">{{ form.email_alert_min_severity.label }}</label>{{ form.email_alert_min_severity }}</div><div class="form-row checkbox-row"><label>{{ form.notify_policy_team }} {{ form.notify_policy_team.label }}</label></div></div>
+            <div class="form-row"><label for="{{ form.simulated_email_recipients.id_for_label }}">{{ form.simulated_email_recipients.label }}</label>{{ form.simulated_email_recipients }}<small>{{ form.simulated_email_recipients.help_text }}</small></div>
+            <div class="two-field-grid"><div class="form-row checkbox-row"><label>{{ form.escalation_enabled }} {{ form.escalation_enabled.label }}</label></div><div class="form-row"><label for="{{ form.escalation_after_minutes.id_for_label }}">{{ form.escalation_after_minutes.label }}</label>{{ form.escalation_after_minutes }}</div></div>
+            <div class="form-row"><label for="{{ form.escalation_group_recipients.id_for_label }}">{{ form.escalation_group_recipients.label }}</label>{{ form.escalation_group_recipients }}<small>{{ form.escalation_group_recipients.help_text }}</small>{% for error in form.escalation_group_recipients.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+        </div>
+    </section>
+
+    <section class="panel"><div class="panel-title"><h2>7. Policy Team Assignment</h2><span class="badge">Admin → Analysts → Auditors</span></div>
+        <div class="three-col-form">
+            <div class="form-row check-list"><label>{{ form.policy_admins.label }}</label>{{ form.policy_admins }}<small>{{ form.policy_admins.help_text }}</small></div>
+            <div class="form-row check-list"><label>{{ form.analysts.label }}</label>{{ form.analysts }}<small>{{ form.analysts.help_text }}</small></div>
+            <div class="form-row check-list"><label>{{ form.auditors.label }}</label>{{ form.auditors }}<small>{{ form.auditors.help_text }}</small></div>
+        </div>
+    </section>
+
+    <section class="panel action-panel">
+        <a class="button ghost" href="{% url 'policies' %}">Cancel</a>
+        <button class="button primary" type="submit">Save Policy</button>
+    </section>
+</form>
+{% endblock %}

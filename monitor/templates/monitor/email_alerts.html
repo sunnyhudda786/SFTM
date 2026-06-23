@@ -1,0 +1,29 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Email Alerts | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Email Notifications{% endblock %}
+{% block content %}
+<section class="panel">
+    <div class="panel-title">
+        <div><h2>Email Delivery Evidence</h2><p class="muted-text">Shows OTP, alert, and escalation email delivery status without cluttering the page with full raw email bodies.</p></div>
+        <span class="badge">OTP · Alert · Escalation</span>
+    </div>
+</section>
+<section class="email-log-list">
+    {% for email in page_obj %}
+        <div class="email-log-card">
+            <div class="email-log-main">
+                <div class="clean-alert-topline">
+                    <span class="badge">{{ email.get_purpose_display }}</span>
+                    <span class="badge {% if email.delivery_status == 'Sent' %}ok{% else %}severity-high{% endif %}">{{ email.delivery_status }}</span>
+                </div>
+                <h3>{{ email.subject }}</h3>
+                <p><b>To:</b> {{ email.recipient }} · <b>Time:</b> {{ email.created_at|date:'Y-m-d H:i:s' }}</p>
+                {% if email.error_message %}<p class="error-box">{{ email.error_message }}</p>{% endif %}
+                {% if email.alert %}<a class="button ghost small" href="{% url 'alert_detail' email.alert.pk %}">Open related alert</a>{% endif %}
+            </div>
+            <details class="email-body-details"><summary>View email text</summary><pre>{{ email.body }}</pre></details>
+        </div>
+    {% empty %}<section class="panel"><p class="muted-text">No email notifications recorded yet.</p></section>{% endfor %}
+</section>
+{% include 'monitor/pagination.html' %}
+{% endblock %}

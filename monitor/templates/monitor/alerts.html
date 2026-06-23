@@ -1,0 +1,44 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Alerts | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Alert Queue{% endblock %}
+{% block content %}
+<section class="panel">
+    <div class="panel-title">
+        <div>
+            <h2>Alert Queue</h2>
+            <p class="muted-text">Open and investigate alerts. The list shows the file, status, owner, and the plain-language reason first.</p>
+        </div>
+        {% if is_admin_user %}<a class="button ghost" href="{% url 'run_escalation_check' %}">Run Escalation Check</a>{% endif %}
+    </div>
+    <form class="filter-bar" method="get">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search file, reason, path, or user">
+        <select name="status"><option value="">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <select name="severity"><option value="">All severities</option>{% for value,label in severity_choices %}<option value="{{ value }}" {% if severity == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <select name="assigned"><option value="">All ownership</option><option value="unassigned" {% if assigned == 'unassigned' %}selected{% endif %}>Unassigned</option><option value="me" {% if assigned == 'me' %}selected{% endif %}>Mine</option></select>
+        <button class="button primary" type="submit">Filter</button><a class="button ghost" href="{% url 'alerts' %}">Reset</a>
+    </form>
+</section>
+
+<section class="clean-alert-list">
+    {% for alert in page_obj %}
+    <a class="clean-alert-card severity-border-{{ alert.event.severity|lower }}" href="{% url 'alert_detail' alert.pk %}">
+        <div class="clean-alert-main">
+            <div class="clean-alert-topline">
+                <span class="badge severity-{{ alert.event.severity|lower }}">{{ alert.event.severity }}</span>
+                <span class="badge status-{{ alert.status }}">{{ alert.get_status_display }}</span>
+                {% if alert.escalated %}<span class="badge severity-high">Escalated</span>{% endif %}
+            </div>
+            <h3>{{ alert.event.destination_path|default:alert.event.source_path|default:'File event'|truncatechars:85 }}</h3>
+            <p>{{ alert.event.reason|default:'Matched monitoring policy'|truncatechars:150 }}</p>
+            <small>{{ alert.event.policy.name|default:'No policy' }} · {{ alert.created_at|date:'Y-m-d H:i' }}</small>
+        </div>
+        <div class="clean-alert-side">
+            <span>Risk</span><strong>{{ alert.event.risk_score }}</strong><small>Owner: {{ alert.owner_name }}</small>
+        </div>
+    </a>
+    {% empty %}
+    <section class="panel"><p class="muted-text">No alerts found.</p></section>
+    {% endfor %}
+</section>
+{% include 'monitor/pagination.html' %}
+{% endblock %}

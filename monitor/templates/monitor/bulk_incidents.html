@@ -1,0 +1,28 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Bulk Transfers | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Bulk Transfer Detection{% endblock %}
+{% block content %}
+<section class="panel">
+    <div class="panel-title"><h2>Bulk Transfer Incidents</h2><span class="badge">Mass movement detection</span></div>
+    <p class="muted-text">This page records abnormal bursts of file activity, useful for detecting possible insider exfiltration or mass copying.</p>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Created</th><th>Window</th><th>Severity</th><th>Files</th><th>User</th><th>Destination Hint</th><th>Reason</th></tr></thead>
+            <tbody>
+            {% for item in page_obj %}
+                <tr>
+                    <td>{{ item.created_at|date:'Y-m-d H:i:s' }}</td>
+                    <td>{{ item.window_start|date:'H:i:s' }} - {{ item.window_end|date:'H:i:s' }}</td>
+                    <td><span class="badge severity-{{ item.severity|lower }}">{{ item.severity }}</span></td>
+                    <td>{{ item.file_count }}</td>
+                    <td>{{ item.username }}</td>
+                    <td class="path">{{ item.destination_hint }}</td>
+                    <td>{{ item.reason }}</td>
+                </tr>
+            {% empty %}<tr><td colspan="7">No bulk transfer incidents yet.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'monitor/pagination.html' %}
+</section>
+{% endblock %}

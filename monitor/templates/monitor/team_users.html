@@ -1,0 +1,57 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Users and Roles | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Role-Based Access Control{% endblock %}
+{% block content %}
+<section class="two-col">
+    <div class="panel">
+        <h2>Create Project User</h2>
+        <p class="muted-text">Email is required for OTP password reset and automatic alert/escalation notification.</p>
+        <form method="post" class="form-card">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<p class="error-box">{{ error }}</p>{% endfor %}</div>
+            {% endfor %}
+            <button class="button primary" type="submit">Create User</button>
+        </form>
+    </div>
+    <div class="panel guide-panel">
+        <h2>Scoped Access</h2>
+        <div class="step-card"><strong>Super Admin</strong><p>Created with createsuperuser. Can see and manage all policies.</p></div>
+        <div class="step-card"><strong>Policy Admin</strong><p>Assigned to specific policies and can manage those policy alerts and users.</p></div>
+        <div class="step-card"><strong>Security Analyst</strong><p>Can only claim/update alerts for assigned policies.</p></div>
+        <div class="step-card"><strong>Auditor</strong><p>Can review assigned policy evidence without editing.</p></div>
+    </div>
+</section>
+<section class="panel">
+    <div class="panel-title"><h2>Existing Users</h2><span class="badge">{{ users|length }} accounts</span></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Username</th><th>Email</th><th>Availability</th><th>Superuser</th><th>Groups</th><th>Policy Memberships</th><th>Password Reset</th></tr></thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email|default:'N/A' }}</td>
+                    <td>
+                        <form method="post" class="inline-status-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_availability">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <select name="availability_status" onchange="this.form.submit()" aria-label="Availability for {{ user.username }}">
+                                {% for value, label in availability_choices %}
+                                    <option value="{{ value }}" {% if user.sftm_profile.availability_status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
+                    <td>{% if user.is_superuser %}Yes{% else %}No{% endif %}</td>
+                    <td>{% for group in user.groups.all %}<span class="badge">{{ group.name }}</span>{% empty %}<span class="muted-text">Unassigned</span>{% endfor %}</td>
+                    <td>{% for member in user.policy_memberships.all %}{% if member.is_active %}<span class="badge">{{ member.policy.name }} · {{ member.get_role_display }}</span>{% endif %}{% empty %}<span class="muted-text">No policy scope</span>{% endfor %}</td>
+                    <td>{% if user.email %}<span class="badge ok">OTP Enabled</span>{% else %}<span class="badge severity-high">Email missing</span>{% endif %}</td>
+                </tr>
+            {% empty %}<tr><td colspan="7">No users found.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

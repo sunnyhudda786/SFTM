@@ -1,0 +1,24 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Reports | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Audit Reports{% endblock %}
+{% block content %}
+<section class="panel">
+    <div class="panel-title">
+        <div><h2>Generated Reports</h2><p class="muted-text">HTML reports summarize events, alerts, top users, severity, bulk incidents, email evidence, and integrity history.</p></div>
+        <a class="button primary" href="{% url 'generate_report' %}">Generate New Report</a>
+    </div>
+    <div class="cards-list compact">
+        {% for report in report_files %}
+            <div class="report-card">
+                <div>
+                    <strong>{{ report.name }}</strong>
+                    <p>{{ report.stat.st_size }} bytes</p>
+                </div>
+                <a class="button ghost" href="{% url 'download_report' report.name %}">Download</a>
+            </div>
+        {% empty %}
+            <p class="muted-text">No reports yet. Click Generate New Report after running test transfers.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

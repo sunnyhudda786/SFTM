@@ -1,0 +1,43 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Policies | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Monitoring Policies{% endblock %}
+{% block content %}
+<section class="panel policy-header-panel">
+    <div class="panel-title">
+        <div>
+            <h2>Policy Management</h2>
+            <p class="muted-text">Create multiple active department policies, assign policy admins/analysts/auditors, and configure escalation groups.</p>
+        </div>
+        <a class="button primary" href="{% url 'policy_create' %}">Create Policy</a>
+    </div>
+</section>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Status</th><th>Policy</th><th>Team</th><th>Escalation</th><th>Folders</th><th>Hash</th><th>Updated</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for policy in policies %}
+                <tr>
+                    <td>{% if policy.is_active %}<span class="badge ok">Active</span>{% else %}<span class="badge">Inactive</span>{% endif %}</td>
+                    <td><strong>{{ policy.name }}</strong><br><span class="muted-text">{{ policy.description|truncatechars:90 }}</span></td>
+                    <td>
+                        {% for member in policy.memberships.all %}{% if member.is_active %}<span class="badge">{{ member.user.username }} · {{ member.get_role_display }}</span>{% endif %}{% empty %}<span class="muted-text">No team assigned</span>{% endfor %}
+                    </td>
+                    <td>{% if policy.escalation_enabled %}<span class="badge severity-high">{{ policy.escalation_after_minutes }} min SLA</span>{% else %}<span class="badge">Disabled</span>{% endif %}<br><span class="muted-text">{{ policy.escalation_recipient_list|length }} group emails</span></td>
+                    <td>{{ policy.monitored_list|length }}</td>
+                    <td>{{ policy.hash_algorithm|upper }}</td>
+                    <td>{{ policy.updated_at|date:'Y-m-d H:i' }}</td>
+                    <td class="action-cell">
+                        <a class="button small ghost" href="{% url 'policy_edit' policy.pk %}">Edit</a>
+                        <form method="post" action="{% url 'policy_activate' policy.pk %}">{% csrf_token %}<button class="button small {% if policy.is_active %}ghost{% else %}primary{% endif %}" type="submit">{% if policy.is_active %}Deactivate{% else %}Activate{% endif %}</button></form>
+                        <form method="post" action="{% url 'policy_delete' policy.pk %}" onsubmit="return confirm('Delete this policy?');">{% csrf_token %}<button class="button small danger-button" type="submit">Delete</button></form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8">No policies created yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

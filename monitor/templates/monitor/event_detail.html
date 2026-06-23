@@ -1,0 +1,40 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Event Detail | Secure Transfer Monitor{% endblock %}
+{% block page_title %}Event Evidence Detail{% endblock %}
+{% block content %}
+<section class="two-col detail-layout">
+    <div class="panel">
+        <div class="panel-title"><h2>Event Summary</h2><span class="badge severity-{{ event.severity|lower }}">{{ event.severity }}</span></div>
+        <dl class="detail-list">
+            <dt>Timestamp</dt><dd>{{ event.timestamp|date:'Y-m-d H:i:s' }}</dd>
+            <dt>Event Type</dt><dd>{{ event.event_type|title }}</dd>
+            <dt>Risk Score</dt><dd><span class="risk-pill">{{ event.risk_score }}</span></dd>
+            <dt>Authorized</dt><dd>{% if event.is_authorized %}Yes{% else %}No{% endif %}</dd>
+            <dt>User</dt><dd>{{ event.username }}</dd>
+            <dt>Process</dt><dd>{{ event.process_name }}</dd>
+            <dt>File Size</dt><dd>{{ event.file_size }} bytes</dd>
+            <dt>Extension</dt><dd>{{ event.file_extension|default:'N/A' }}</dd>
+        </dl>
+    </div>
+    <div class="panel">
+        <div class="panel-title"><h2>Classification</h2><span class="badge">DLP logic</span></div>
+        <dl class="detail-list">
+            <dt>Sensitive</dt><dd>{% if event.is_sensitive %}Yes{% else %}No{% endif %}</dd>
+            <dt>Category</dt><dd>{{ event.sensitivity_category }}</dd>
+            <dt>Classification Reason</dt><dd>{{ event.classification_reason }}</dd>
+            <dt>Alert Reason</dt><dd>{{ event.reason }}</dd>
+            <dt>Policy</dt><dd>{{ event.policy.name|default:'N/A' }}</dd>
+        </dl>
+    </div>
+</section>
+<section class="panel">
+    <div class="panel-title"><h2>Paths and Hash Evidence</h2>{% if alert %}<a class="button primary" href="{% url 'alert_detail' alert.pk %}">Open Alert</a>{% endif %}</div>
+    <dl class="detail-list wide">
+        <dt>Source Path</dt><dd class="path">{{ event.source_path|default:'N/A' }}</dd>
+        <dt>Destination Path</dt><dd class="path">{{ event.destination_path|default:'N/A' }}</dd>
+        <dt>Hash Before</dt><dd class="hash">{{ event.hash_before|default:'N/A' }}</dd>
+        <dt>Hash After</dt><dd class="hash">{{ event.hash_after|default:'N/A' }}</dd>
+        <dt>Integrity Status</dt><dd>{{ event.integrity_status }}</dd>
+    </dl>
+</section>
+{% endblock %}

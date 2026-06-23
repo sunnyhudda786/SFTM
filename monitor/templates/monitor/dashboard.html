@@ -1,0 +1,283 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Dashboard | Secure Transfer Monitor{% endblock %}
+{% block page_title %}{% if is_admin_dashboard %}Security Command Center{% elif is_analyst_dashboard %}Analyst Investigation Workbench{% elif is_auditor_dashboard %}Audit Evidence Review{% else %}Security Dashboard{% endif %}{% endblock %}
+{% block content %}
+
+{% if is_admin_dashboard %}
+<section class="ops-hero admin-gradient">
+    <div>
+        <span class="tiny-label">Admin operations view</span>
+        <h2>Policy health, team coverage, active risk, and escalation control</h2>
+        <p>This dashboard shows active risk only. When an alert is closed or marked false positive, it moves out of the active alert count.</p>
+    </div>
+    <div class="ops-actions">
+        <a class="button primary" href="{% url 'policies' %}">Manage Policy</a>
+        <a class="button ghost" href="{% url 'team_users' %}">Manage Users</a>
+        <a class="button ghost" href="{% url 'run_escalation_check' %}">Check Escalations</a>
+    </div>
+</section>
+
+<section class="executive-grid">
+    <div class="kpi-panel">
+        <span>Active alerts</span>
+        <strong>{{ total_alerts }}</strong>
+        <small>{{ open_alerts }} open · {{ investigating_alerts }} investigating · {{ resolved_alerts }} resolved total</small>
+    </div>
+    <div class="kpi-panel danger">
+        <span>Unassigned queue</span>
+        <strong>{{ unassigned_alerts }}</strong>
+        <small>Waiting for analyst ownership</small>
+    </div>
+    <div class="kpi-panel critical">
+        <span>Critical / High</span>
+        <strong>{{ critical_alerts }} / {{ high_alerts }}</strong>
+        <small>Active priority cases</small>
+    </div>
+    <div class="kpi-panel">
+        <span>Available team</span>
+        <strong>{{ available_team }}</strong>
+        <small>Logged-in or manually available responders</small>
+    </div>
+</section>
+
+<section class="dashboard-mix">
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Active vs Resolved</h2><span class="badge">{{ all_alerts }} total cases</span></div>
+        <div class="donut-wrap">
+            <div class="donut" style="--value: {{ active_alert_percent }};"><span>{{ active_alert_percent }}%</span></div>
+            <div class="donut-legend">
+                <div><b class="dot active-dot"></b>Active alerts <strong>{{ total_alerts }}</strong></div>
+                <div><b class="dot resolved-dot"></b>Resolved / false positive <strong>{{ resolved_alerts }}</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Ownership Coverage</h2><span class="badge">Claim rate {{ claim_rate_percent }}%</span></div>
+        <div class="donut-wrap">
+            <div class="donut alt" style="--value: {{ claim_rate_percent }};"><span>{{ claim_rate_percent }}%</span></div>
+            <div class="donut-legend">
+                <div><b class="dot assigned-dot"></b>Assigned / claimed <strong>{{ assigned_active_alerts }}</strong></div>
+                <div><b class="dot unassigned-dot"></b>Unassigned <strong>{{ unassigned_alerts }}</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Severity Mix</h2><span class="badge">Active alerts</span></div>
+        <div class="stacked-bar">
+            {% for row in severity_counts %}
+                {% if row.total %}<span class="stack stack-{{ row.label|lower }}" style="width: {{ row.percent }}%" title="{{ row.label }}: {{ row.total }}"></span>{% endif %}
+            {% endfor %}
+        </div>
+        <div class="legend-grid">
+            {% for row in severity_counts %}
+                <div><span class="badge severity-{{ row.label|lower }}">{{ row.label }}</span><strong>{{ row.total }}</strong></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="two-col admin-layout">
+    <div class="panel wide-panel">
+        <div class="panel-title"><h2>Policy Operations</h2><a href="{% url 'policies' %}">Open policy</a></div>
+        <div class="table-wrap industry-table">
+            <table>
+                <thead><tr><th>Policy</th><th>Team</th><th>Active Alerts</th><th>Unassigned</th><th>Critical/High</th><th>Escalated</th><th>SLA</th></tr></thead>
+                <tbody>
+                {% for row in policy_rows %}
+                    <tr>
+                        <td><strong>{{ row.policy.name }}</strong><br><span class="muted-text">{% if row.policy.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                        <td><span class="badge">Admin {{ row.admins|length }}</span><span class="badge">Analysts {{ row.analysts|length }}</span><span class="badge">Auditors {{ row.auditors|length }}</span></td>
+                        <td>{{ row.open_alerts }}</td>
+                        <td>{% if row.unassigned_alerts %}<span class="badge severity-high">{{ row.unassigned_alerts }}</span>{% else %}<span class="badge ok">0</span>{% endif %}</td>
+                        <td>{{ row.critical_high }}</td>
+                        <td>{% if row.escalated %}<span class="badge critical-badge">{{ row.escalated }}</span>{% else %}<span class="badge ok">0</span>{% endif %}</td>
+                        <td>{{ row.policy.escalation_after_minutes }} min</td>
+                    </tr>
+                {% empty %}<tr><td colspan="7">No policy created yet.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title"><h2>Team Availability</h2><a href="{% url 'team_users' %}">Manage</a></div>
+        <div class="availability-board">
+            {% for row in availability_counts %}
+                <div class="availability-tile status-{{ row.value }}"><span>{{ row.label }}</span><strong>{{ row.total }}</strong></div>
+            {% endfor %}
+        </div>
+        <div class="cards-list compact team-list">
+            {% for profile in team_profiles %}
+                <div class="team-line"><strong>{{ profile.user.username }}</strong><span class="status-pill status-{{ profile.availability_status }}">{{ profile.get_availability_status_display }}</span></div>
+            {% empty %}<p class="muted-text">No team members assigned yet.</p>{% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="two-col">
+    <div class="panel chart-panel">
+        <div class="panel-title"><h2>7-Day Event Trend</h2><span class="badge">Timeline</span></div>
+        <div class="column-chart">
+            {% for row in daily_counts %}
+                <div class="column-item"><div class="column-bar" style="height: {{ row.percent }}%"></div><span>{{ row.label }}</span><strong>{{ row.total }}</strong></div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="panel chart-panel">
+        <div class="panel-title"><h2>Event Type Distribution</h2><span class="badge">Filesystem activity</span></div>
+        <div class="bar-list">
+            {% for row in event_counts %}<div class="bar-row"><span>{{ row.label }}</span><div class="bar-track"><div class="bar-fill" style="width: {{ row.percent }}%"></div></div><strong>{{ row.total }}</strong></div>{% endfor %}
+        </div>
+    </div>
+</section>
+
+{% elif is_analyst_dashboard %}
+<section class="ops-hero analyst-gradient">
+    <div>
+        <span class="tiny-label">Analyst workbench</span>
+        <h2>Owned investigations, claimable alerts, and evidence triage</h2>
+        <p>Analysts see only alerts from their assigned policy. Closed cases no longer appear as active workload.</p>
+    </div>
+    <div class="analyst-status-card"><span>Your status</span><strong>{{ availability_status }}</strong></div>
+</section>
+
+<section class="analyst-work-grid">
+    <div class="case-focus-card">
+        <span>My active cases</span>
+        <strong>{{ my_alerts }}</strong>
+        <small>Assigned or claimed by you</small>
+    </div>
+    <div class="case-focus-card warning">
+        <span>Claimable</span>
+        <strong>{{ claimable_alerts|length }}</strong>
+        <small>Unassigned alerts in your policy</small>
+    </div>
+    <div class="case-focus-card critical">
+        <span>Critical / High</span>
+        <strong>{{ critical_alerts }} / {{ high_alerts }}</strong>
+        <small>Your policy scope</small>
+    </div>
+    <div class="case-focus-card success">
+        <span>Closed today</span>
+        <strong>{{ closed_today }}</strong>
+        <small>Completed investigations</small>
+    </div>
+</section>
+
+<section class="two-col">
+    <div class="panel analyst-queue-panel">
+        <div class="panel-title"><h2>My Investigation Queue</h2><a href="{% url 'alerts' %}?assigned=me">View mine</a></div>
+        <div class="cards-list compact">
+            {% for alert in my_queue %}
+                <a class="alert-card" href="{% url 'alert_detail' alert.pk %}">
+                    <span class="badge severity-{{ alert.event.severity|lower }}">{{ alert.event.severity }}</span>
+                    <span class="badge status-{{ alert.status }}">{{ alert.get_status_display }}</span>
+                    <strong>{{ alert.event.reason|truncatechars:90 }}</strong>
+                    <small>{{ alert.event.policy.name|default:'No Policy' }} · Risk {{ alert.event.risk_score }} · {{ alert.event.timestamp|date:'Y-m-d H:i' }}</small>
+                </a>
+            {% empty %}<p class="muted-text">You do not have active assigned investigations.</p>{% endfor %}
+        </div>
+    </div>
+    <div class="panel claim-panel">
+        <div class="panel-title"><h2>Claimable Alerts</h2><a href="{% url 'alerts' %}?assigned=unassigned">Open queue</a></div>
+        <div class="cards-list compact">
+            {% for alert in claimable_alerts %}
+                <a class="alert-card claimable-card" href="{% url 'alert_detail' alert.pk %}">
+                    <span class="badge severity-{{ alert.event.severity|lower }}">{{ alert.event.severity }}</span>
+                    <strong>{{ alert.event.reason|truncatechars:90 }}</strong>
+                    <small>{{ alert.event.policy.name|default:'No Policy' }} · Click to claim · Risk {{ alert.event.risk_score }}</small>
+                </a>
+            {% empty %}<p class="muted-text">No unassigned alerts are waiting in your policy scope.</p>{% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-mix analyst-visuals">
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Case Status</h2><span class="badge">{{ all_alerts }} total</span></div>
+        <div class="donut-wrap compact-donut">
+            <div class="donut" style="--value: {{ active_alert_percent }};"><span>{{ active_alert_percent }}%</span></div>
+            <div class="donut-legend">
+                <div><b class="dot active-dot"></b>Active <strong>{{ total_alerts }}</strong></div>
+                <div><b class="dot resolved-dot"></b>Resolved <strong>{{ resolved_alerts }}</strong></div>
+            </div>
+        </div>
+    </div>
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Severity Bars</h2><span class="badge">Active</span></div>
+        <div class="bar-list">
+            {% for row in severity_counts %}<div class="bar-row"><span>{{ row.label }}</span><div class="bar-track"><div class="bar-fill severity-{{ row.label|lower }}" style="width: {{ row.percent }}%"></div></div><strong>{{ row.total }}</strong></div>{% endfor %}
+        </div>
+    </div>
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Assigned Policy</h2><span class="badge">Scope</span></div>
+        <div class="cards-list compact">
+            {% for membership in assigned_policies %}
+                <div class="alert-card static-card"><span class="badge">{{ membership.get_role_display }}</span><strong>{{ membership.policy.name }}</strong><small>{% if membership.policy.is_active %}Active monitoring policy{% else %}Inactive policy{% endif %}</small></div>
+            {% empty %}<p class="muted-text">No policy assigned.</p>{% endfor %}
+        </div>
+    </div>
+</section>
+
+{% else %}
+<section class="ops-hero auditor-gradient">
+    <div>
+        <span class="tiny-label">Auditor evidence view</span>
+        <h2>Read-only visibility into policy evidence and alert outcomes</h2>
+        <p>Auditors review evidence, closed cases, integrity history, reports, and notification records without modifying investigations.</p>
+    </div>
+    <a class="button ghost" href="{% url 'reports' %}">Open Reports</a>
+</section>
+<section class="dashboard-mix">
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Evidence Status</h2><span class="badge">{{ all_alerts }} total</span></div>
+        <div class="donut-wrap">
+            <div class="donut" style="--value: {{ resolved_alert_percent }};"><span>{{ resolved_alert_percent }}%</span></div>
+            <div class="donut-legend">
+                <div><b class="dot resolved-dot"></b>Resolved evidence <strong>{{ resolved_alerts }}</strong></div>
+                <div><b class="dot active-dot"></b>Still active <strong>{{ total_alerts }}</strong></div>
+            </div>
+        </div>
+    </div>
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Risk Evidence</h2><span class="badge">Active criticality</span></div>
+        <div class="bar-list">
+            {% for row in severity_counts %}<div class="bar-row"><span>{{ row.label }}</span><div class="bar-track"><div class="bar-fill severity-{{ row.label|lower }}" style="width: {{ row.percent }}%"></div></div><strong>{{ row.total }}</strong></div>{% endfor %}
+        </div>
+    </div>
+    <div class="panel visual-card">
+        <div class="panel-title"><h2>Audit Totals</h2><span class="badge">Read only</span></div>
+        <div class="audit-total-list">
+            <div><span>Total events</span><strong>{{ total_events }}</strong></div>
+            <div><span>Email evidence</span><strong>{{ simulated_emails }}</strong></div>
+            <div><span>Bulk incidents</span><strong>{{ bulk_incidents }}</strong></div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="panel">
+    <div class="panel-title"><h2>Recent File Activity</h2><a href="{% url 'events' %}">Open logs</a></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Time</th><th>Policy</th><th>Event</th><th>Severity</th><th>Risk</th><th>Authorized</th><th>Reason</th><th>Path</th></tr></thead>
+            <tbody>
+            {% for event in latest_events %}
+                <tr>
+                    <td>{{ event.timestamp|date:'Y-m-d H:i:s' }}</td>
+                    <td>{{ event.policy.name|default:'No Policy' }}</td>
+                    <td><a href="{% url 'event_detail' event.pk %}">{{ event.event_type|title }}</a></td>
+                    <td><span class="badge severity-{{ event.severity|lower }}">{{ event.severity }}</span></td>
+                    <td><span class="risk-pill">{{ event.risk_score }}</span></td>
+                    <td>{% if event.is_authorized %}<span class="badge ok">Yes</span>{% else %}<span class="badge critical-badge">No</span>{% endif %}</td>
+                    <td>{{ event.reason|truncatechars:90 }}</td>
+                    <td class="path">{{ event.destination_path|default:event.source_path }}</td>
+                </tr>
+            {% empty %}<tr><td colspan="8">No file events recorded.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
