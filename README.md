@@ -1,5 +1,5 @@
 <!-- Using a web link -->
-![Company Logo](https://example.com)
+![Company Logo]([https://example.com](https://github.com/sunnyhudda786/SFTM/blob/main/sftm_logo.png))
 
 
 # Secure File Transfer Monitoring System
